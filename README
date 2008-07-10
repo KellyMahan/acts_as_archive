@@ -3,6 +3,8 @@ ActsAsArchive
 
 I'm working on an acts_as_archive plugin. If you think you could use this or a slight modification to this let me know. I will be using it to archive post data to help load on forums, but still have an easy way to find the archived data. 
 
+this is still very much a beta plugin that i first started coding on July 10th.
+
 currently to use it you would add 
 
 acts_as_archive
