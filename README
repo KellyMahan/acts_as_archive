@@ -1,0 +1,66 @@
+ActsAsArchive
+============
+
+I'm working on an acts_as_archive plugin. If you think you could use this or a slight modification to this let me know. I will be using it to archive post data to help load on forums, but still have an easy way to find the archived data. 
+
+currently to use it you would add 
+
+acts_as_archive
+
+to the model you want to have archive abilities.
+Then add a migration file like this
+
+class AddPostCommentArchiving < ActiveRecord::Migration
+  def self.up
+    require_dependency 'post'
+    require_dependency 'comment'
+    require_dependency 'article'
+    # begin
+      Post.create_archive_table
+      Comment.create_archive_table
+      Article.create_archive_table
+    # rescue
+    #   puts "error created archive tables"
+    # end
+  end
+
+  def self.down
+    Post.drop_archive_table
+    Comment.drop_archive_table
+    Article.drop_archive_table
+  end
+end
+
+
+
+this plugin gives you 3 main methods
+
+modelinstance.archive
+Model.unarchive(id)
+Model.find_archive(args)
+
+find_archive is very similar to the regular find. Except it searches the model plus the archived data
+It accepts
+
+	:all	or	:first as the first value
+	:conditions (currently only 1 string; working on using the safe array format)
+	:order
+	:limit
+	:offset
+
+it also accepts id's
+
+
+archive removes the item with a delete call so callbacks aren't made
+unarchive adds the item back with it's original data id included, (call backs are still made, need to disable)
+
+
+TODO
+
+make standard finds by ID search the archives as well, I may not include this in the plugin, but code separately.
+allow for safe conditions in find using array format
+
+
+
+
+Copyright (c) 2008 Kelly Mahan, released under the MIT license
