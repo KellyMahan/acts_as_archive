@@ -5,6 +5,9 @@ I'm working on an acts_as_archive plugin. If you think you could use this or a s
 
 this is still very much a beta plugin that i first started coding on July 10th.
 
+This plugin requires the use of http://tangofoxtrot.com/2008/5/8/active-record-save-without-callbacks-plugin
+
+
 currently to use it you would add 
 
 acts_as_archive
@@ -41,20 +44,24 @@ modelinstance.archive
 Model.unarchive(id)
 Model.find_archive(args)
 
-find_archive is very similar to the regular find. Except it searches the model plus the archived data
-It accepts
+find_archive:
+  very similar to the regular find. Except it searches the model plus the archived data
+  It accepts
 
-	:all	or	:first as the first value
-	:conditions (currently only 1 string; working on using the safe array format)
-	:order
-	:limit
-	:offset
+  	:all	or	:first as the first value
+  	:conditions (currently only 1 string; working on using the safe array format)
+  	:order
+  	:limit
+  	:offset
 
-it also accepts id's
+  it also accepts id's
 
 
-archive removes the item with a delete call so callbacks aren't made
-unarchive adds the item back with it's original data id included, (call backs are still made, need to disable)
+archive:
+  removes the item with a delete call so callbacks aren't made. It also finds all associated models with a dependent destroy or dependent delete and archives them as well if the model is also set as acts as archive.
+
+unarchive:
+  adds the item back with it's original data id included. It also finds any associated models that are archived based on the primary key association.
 
 
 TODO

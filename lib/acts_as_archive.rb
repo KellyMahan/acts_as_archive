@@ -64,11 +64,27 @@ module Digi
           digi_archive = self.class.archive_class
           arch = digi_archive.new
           self.clone_archive_model(self, arch)
-          Post.transaction do
+          self.class.transaction do
+            find_dependents_for_archive(self)
+            arch.skip_callbacks = true
+            self.skip_callbacks = true
             arch.save
             self.destroy
+            arch.skip_callbacks = false
+            self.skip_callbacks = false
           end
           return arch
+        end
+        
+        def find_dependents_for_archive(record)
+          record.class.reflections.values.each do |ref|
+            if ref.options[:dependent] == :destroy || ref.options[:dependent] == :delete
+              associatedrecords = self.send(ref.name)
+              associatedrecords.each do |ar|
+                ar.archive if ar.respond_to?(:archive)
+              end
+            end
+          end          
         end
         
         def clone_archive_model_reverse(orig_model, new_model)
@@ -90,6 +106,31 @@ module Digi
       # add your class methods here
       module ArchiveMethods
         
+        def create_archive_table
+            
+            self.connection.create_table(archive_table_name) do |t|
+              t.column :archived_on, :timestamp
+              t.column :unarchived_id, :integer
+            end
+            
+            self.archived_columns.each do |col|
+            puts "***** column #{col.name}"
+            self.connection.add_column archive_table_name, col.name, col.type, 
+              :limit => col.limit, 
+              :default => col.default,
+              :scale => col.scale,
+              :precision => col.precision
+            end
+        end
+        
+        def drop_archive_table
+          self.connection.drop_table archive_table_name
+        end
+        
+        def archive_table_name
+          "#{base_class.name.demodulize.underscore}_archives"
+        end
+        
         
         def archive_table_name
           "#{base_class.name.demodulize.underscore}_archives"
@@ -109,16 +150,39 @@ module Digi
         
         
         def unarchive(oldid)
-          digi_archive = Post.archive_class
+          digi_archive = self.archive_class
           arch = digi_archive.find_by_unarchived_id(oldid)
           arch = arch.first if arch.is_a?(Array)
-          post = Post.new
+          post = self.new
           post.clone_archive_model_reverse(post, arch)
-          Post.transaction do
+          self.transaction do
+            find_dependents_for_unarchive(post)
+            
+            arch.skip_callbacks = true
+            post.skip_callbacks = true
             arch.destroy
             post.save
+            
+            arch.skip_callbacks = false
+            post.skip_callbacks = false
           end
           return post
+        end
+        
+        def find_dependents_for_unarchive(record)
+          #puts "*** unarchiving for #{record.class.name} #{record.id}"
+          record.class.reflections.values.each do |ref|
+            if (ref.options[:dependent] == :destroy || ref.options[:dependent] == :delete) and ref.class_name.constantize.respond_to?(:archive_class)
+              
+              #puts "*** found dependent #{ref.class_name}"
+              associatedrecords = ref.class_name.constantize.archive_class.find(:all, :conditions => "#{ref.primary_key_name} = #{record.id}")
+              associatedrecords.each do |ar|
+                
+                #puts "*** found record #{ref.class_name} #{ar.unarchived_id}"
+                ref.class_name.constantize.unarchive(ar.unarchived_id)
+              end
+            end
+          end          
         end
         
         # def archive
