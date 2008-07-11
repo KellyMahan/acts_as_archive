@@ -17,24 +17,25 @@ Then add a migration file like this
 
 class AddPostCommentArchiving < ActiveRecord::Migration
   def self.up
-    require_dependency 'post'
-    require_dependency 'comment'
-    require_dependency 'article'
-    # begin
+    transaction do
       Post.create_archive_table
       Comment.create_archive_table
       Article.create_archive_table
-    # rescue
-    #   puts "error created archive tables"
-    # end
+      Forum.create_archive_table
+    end
   end
 
   def self.down
-    Post.drop_archive_table
-    Comment.drop_archive_table
-    Article.drop_archive_table
+    
+    transaction do
+      Post.drop_archive_table
+      Comment.drop_archive_table
+      Article.drop_archive_table
+      Forum.drop_archive_table
+    end
   end
 end
+
 
 
 
